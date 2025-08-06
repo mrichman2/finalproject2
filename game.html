@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Legendary Pong</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #121212;
+      font-family: 'Orbitron', sans-serif;
+      color: #fff;
+      text-align: center;
+      user-select: none;
+    }
+
+    nav {
+      background-color: #1e1e1e;
+      padding: 10px;
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      border-bottom: 2px solid #1e90ff;
+    }
+
+    nav a {
+      color: #1e90ff;
+      text-decoration: none;
+      font-size: 18px;
+      transition: 0.2s;
+    }
+
+    nav a:hover {
+      color: #ff7f50;
+      text-shadow: 0 0 5px #ff7f50;
+    }
+
+    #scoreBoard {
+      margin: 20px 0 10px 0;
+      font-size: 40px;
+      letter-spacing: 4px;
+      color: #1e90ff;
+    }
+
+    #instructions {
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: #aaa;
+    }
+
+    canvas {
+      background: #000;
+      border: 2px solid #1e90ff;
+      border-radius: 8px;
+      box-shadow: 0 0 15px #1e90ff88;
+      display: block;
+      margin: 0 auto 40px;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">résumé
+    
+  </a>
+  <a href="scratch.html">scratch</a>
+</nav>
+
+<div id="scoreBoard">0 : 0</div>
+<div id="instructions">Use W/S or Mouse to move paddle</div>
+<canvas id="pongCanvas" width="800" height="500"></canvas>
+
+<script>
+(() => {
+  const canvas = document.getElementById('pongCanvas');
+  const ctx = canvas.getContext('2d');
+
+  const clamp = (val, min, max) => Math.min(max, Math.max(min, val));
+
+  class Paddle {
+    constructor(x, y, width, height, color, isPlayer = false) {
+      this.x = x;
+      this.y = y;
+      this.width = width;
+      this.height = height;
+      this.color = color;
+      this.speed = 7;
+      this.dy = 0;
+      this.isPlayer = isPlayer;
+    }
+    draw() {
+      ctx.fillStyle = this.color;
+      ctx.shadowColor = this.color;
+      ctx.shadowBlur = 10;
+      ctx.fillRect(this.x, this.y, this.width, this.height);
+      ctx.shadowBlur = 0;
+    }
+    update() {
+      this.y += this.dy;
+      this.y = clamp(this.y, 0, canvas.height - this.height);
+    }
+  }
+
+  class Ball {
+    constructor(x, y, radius, color) {
+      this.x = x;
+      this.y = y;
+      this.radius = radius;
+      this.color = color;
+      this.speed = 6;
+      this.dx = (Math.random() > 0.5 ? 1 : -1) * this.speed;
+      this.dy = (Math.random() * 4 - 2);
+    }
+    draw() {
+      ctx.fillStyle = this.color;
+      ctx.shadowColor = this.color;
+      ctx.shadowBlur = 15;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+    update() {
+      this.x += this.dx;
+      this.y += this.dy;
+
+      if (this.y + this.radius > canvas.height || this.y - this.radius < 0) {
+        this.dy = -this.dy;
+        playSound(hitSound);
+      }
+    }
+    reset() {
+      this.x = canvas.width / 2;
+      this.y = canvas.height / 2;
+      this.dx = (Math.random() > 0.5 ? 1 : -1) * this.speed;
+      this.dy = (Math.random() * 4 - 2);
+    }
+  }
+
+  const hitSound = new Audio('https://actions.google.com/sounds/v1/impacts/metal_thud_and_ding.ogg');
+  const scoreSound = new Audio('https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg');
+
+  function playSound(sound) {
+    let s = sound.cloneNode();
+    s.play();
+  }
+
+  let playerScore = 0;
+  let aiScore = 0;
+
+  const paddleWidth = 15;
+  const paddleHeight = 100;
+
+  const player = new Paddle(20, canvas.height / 2 - paddleHeight / 2, paddleWidth, paddleHeight, '#1e90ff', true);
+  const ai = new Paddle(canvas.width - paddleWidth - 20, canvas.height / 2 - paddleHeight / 2, paddleWidth, paddleHeight, '#ff7f50');
+  const ball = new Ball(canvas.width / 2, canvas.height / 2, 10, '#1e90ff');
+
+  const keys = {};
+  let useMouse = false;
+
+  window.addEventListener('keydown', e => {
+    keys[e.key.toLowerCase()] = true;
+    useMouse = false;
+  });
+  window.addEventListener('keyup', e => {
+    keys[e.key.toLowerCase()] = false;
+  });
+
+  canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    let mouseY = e.clientY - rect.top;
+    player.y = clamp(mouseY - player.height / 2, 0, canvas.height - player.height);
+    useMouse = true;
+  });
+
+  function checkCollision(paddle) {
+    if (
+      ball.x - ball.radius < paddle.x + paddle.width &&
+      ball.x + ball.radius > paddle.x &&
+      ball.y + ball.radius > paddle.y &&
+      ball.y - ball.radius < paddle.y + paddle.height
+    ) {
+      ball.dx = -ball.dx;
+      ball.dy += (Math.random() - 0.5) * 2;
+      playSound(hitSound);
+    }
+  }
+
+  function drawNet() {
+    ctx.strokeStyle = '#1e90ff';
+    ctx.lineWidth = 2;
+    const segment = 20;
+    for (let y = 0; y < canvas.height; y += segment * 2) {
+      ctx.beginPath();
+      ctx.moveTo(canvas.width / 2, y);
+      ctx.lineTo(canvas.width / 2, y + segment);
+      ctx.stroke();
+    }
+  }
+
+  function update() {
+    if (!useMouse) {
+      if (keys['w']) player.dy = -player.speed;
+      else if (keys['s']) player.dy = player.speed;
+      else player.dy = 0;
+    } else {
+      player.dy = 0;
+    }
+
+    player.update();
+    ai.y += (ball.y - (ai.y + ai.height / 2)) * 0.08;
+    ai.y = clamp(ai.y, 0, canvas.height - ai.height);
+
+    ball.update();
+
+    checkCollision(player);
+    checkCollision(ai);
+
+    if (ball.x - ball.radius < 0) {
+      aiScore++;
+      playSound(scoreSound);
+      ball.reset();
+    }
+    if (ball.x + ball.radius > canvas.width) {
+      playerScore++;
+      playSound(scoreSound);
+      ball.reset();
+    }
+
+    document.getElementById('scoreBoard').textContent = `${playerScore} : ${aiScore}`;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawNet();
+    player.draw();
+    ai.draw();
+    ball.draw();
+  }
+
+  function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  ball.reset();
+  loop();
+})();
+</script>
+
+</body>
+</html>
