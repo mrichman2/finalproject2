@@ -1,0 +1,60 @@
+/* Basic overall layout */
+body {
+    background-color: #ec98d1; /* light gray background */
+    font-family: Arial, sans-serif;
+    color: #333333;
+    margin: 0;
+    padding: 0;
+}
+
+/* Simple header style */
+.header {
+    background-color: #86bfea;
+    padding: 20px;
+    text-align: center;
+}
+
+/* Styling for main image */
+.main-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+/* Simple nav bar */
+#nav {
+    background-color: #c1d5e0;
+    padding: 10px;
+    text-align: center;
+}
+
+#nav a {
+    color: #003366;
+    text-decoration: none;
+    margin: 0 15px;
+    font-weight: bold;
+}
+
+/* Content block styles */
+.content-block {
+    margin: 20px auto;
+    padding: 20px;
+    width: 80%;
+    background-color: #ffffff;
+    border: 1px solid #cccccc;
+    border-radius: 5px;
+}
+
+/* Footer style */
+.footer {
+    text-align: center;
+    padding: 15px;
+    background-color: #e0e0e0;
+}
+
+.footer a {
+    color: #333333;
+    text-decoration: none;
+    font-weight:
+
